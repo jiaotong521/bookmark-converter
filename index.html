@@ -392,7 +392,6 @@
             fill: currentColor;
         }
         
-        /* 新增样式：预览工具栏 */
         .preview-toolbar {
             display: flex;
             justify-content: space-between;
@@ -407,7 +406,6 @@
             color: #58a6ff;
         }
         
-        /* Syntax highlighting for JSON */
         .json-string {
             color: #a5d6ff;
         }
@@ -574,6 +572,8 @@
                 this.bookmarks = null;
                 this.jsonResult = null;
                 this.originalHtml = null;
+                this.sourceFileName = null;
+                this.statusTimer = null;
                 this.initEventListeners();
             }
             
@@ -587,14 +587,12 @@
                 const copyBtn = document.getElementById('copyBtn');
                 const formatBtn = document.getElementById('formatBtn');
                 
-                // 文件上传
                 uploadArea.addEventListener('click', () => fileInput.click());
                 uploadArea.addEventListener('dragover', this.handleDragOver.bind(this));
                 uploadArea.addEventListener('dragleave', this.handleDragLeave.bind(this));
                 uploadArea.addEventListener('drop', this.handleDrop.bind(this));
                 fileInput.addEventListener('change', this.handleFileSelect.bind(this));
                 
-                // 按钮事件
                 convertBtn.addEventListener('click', this.convertToJson.bind(this));
                 previewBtn.addEventListener('click', this.showPreview.bind(this));
                 clearBtn.addEventListener('click', this.clearAll.bind(this));
@@ -602,14 +600,12 @@
                 copyBtn.addEventListener('click', this.copyJson.bind(this));
                 formatBtn.addEventListener('click', this.formatJson.bind(this));
                 
-                // 新增：返回按钮事件
                 document.getElementById('backToResultBtn').addEventListener('click', () => {
                     document.getElementById('previewContainer').style.display = 'none';
                     document.getElementById('resultContainer').style.display = 'block';
                     document.getElementById('placeholder').style.display = 'none';
                 });
                 
-                // 复选框事件
                 document.getElementById('includeMetadata').addEventListener('change', this.updateJson.bind(this));
                 document.getElementById('preserveStructure').addEventListener('change', this.updateJson.bind(this));
                 document.getElementById('includeIcons').addEventListener('change', this.updateJson.bind(this));
@@ -656,6 +652,7 @@
                     this.showLoading(true);
                     const content = await this.readFile(file);
                     this.originalHtml = content;
+                    this.sourceFileName = file.name || 'bookmarks.html';
                     
                     const startTime = performance.now();
                     const bookmarks = this.parseBookmarks(content);
@@ -691,13 +688,10 @@
             
             parseBookmarks(html) {
                 const parser = new DOMParser();
-                const doc = parser.parseFromString(html, 'text/html');
                 
-                // 移除命名空间
                 const bookmarksHtml = html.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1');
                 const docClean = parser.parseFromString(bookmarksHtml, 'text/html');
                 
-                // 查找书签的根元素
                 let root = null;
                 const possibleRoots = [
                     'DL',
@@ -714,16 +708,13 @@
                 }
                 
                 if (!root) {
-                    // 尝试查找H3标签作为起点
                     const h3Elements = docClean.querySelectorAll('h3, H3');
                     if (h3Elements.length > 0) {
-                        // 创建虚拟根节点
                         root = docClean.createElement('dl');
                         const firstH3 = h3Elements[0];
                         firstH3.parentNode.insertBefore(root, firstH3);
                         root.appendChild(firstH3);
                         
-                        // 移动所有同级元素到根节点下
                         let next = firstH3.nextSibling;
                         while (next) {
                             const current = next;
@@ -741,7 +732,6 @@
                     throw new Error('无法找到有效的书签结构，请检查文件格式');
                 }
                 
-                // 递归解析书签结构
                 const bookmarks = this.parseBookmarkNode(root);
                 
                 if (!bookmarks.length) {
@@ -753,21 +743,17 @@
             
             parseBookmarkNode(node, level = 0) {
                 const items = [];
-                const children = Array.from(node.children);
+                let child = node.firstElementChild;
                 
-                for (let i = 0; i < children.length; i++) {
-                    const child = children[i];
+                while (child) {
                     const tagName = child.tagName.toLowerCase();
                     
                     if (tagName === 'dt') {
-                        // 处理书签项
                         const subItems = this.processDtElement(child, level);
                         items.push(...subItems);
-                    } else if (tagName === 'dl' || tagName === 'p') {
-                        // 递归处理子列表
-                        const subItems = this.parseBookmarkNode(child, level + 1);
-                        items.push(...subItems);
                     }
+                    
+                    child = child.nextElementSibling;
                 }
                 
                 return items;
@@ -776,13 +762,11 @@
             processDtElement(dt, level) {
                 const items = [];
                 
-                // 查找H3（文件夹）和A（书签）
                 const h3 = dt.querySelector('h3') || dt.querySelector('H3');
                 const a = dt.querySelector('a') || dt.querySelector('A');
                 const dl = dt.querySelector('dl') || dt.querySelector('DL');
                 
                 if (h3) {
-                    // 这是一个文件夹
                     const folder = {
                         type: 'folder',
                         title: h3.textContent.trim(),
@@ -791,23 +775,20 @@
                         icon: null
                     };
                     
-                    // 尝试获取图标
                     const icon = h3.getAttribute('ICON') || h3.getAttribute('icon');
                     if (icon) {
                         folder.icon = icon;
                     }
                     
-                    // 查找并递归处理子内容
-                    const nextDt = dt.nextElementSibling;
+                    const nextSibling = dt.nextElementSibling;
                     if (dl) {
                         folder.children = this.parseBookmarkNode(dl, level + 1);
-                    } else if (nextDt && nextDt.tagName.toLowerCase() === 'dl') {
-                        folder.children = this.parseBookmarkNode(nextDt, level + 1);
+                    } else if (nextSibling && nextSibling.tagName.toLowerCase() === 'dl') {
+                        folder.children = this.parseBookmarkNode(nextSibling, level + 1);
                     }
                     
                     items.push(folder);
                 } else if (a) {
-                    // 这是一个书签
                     const bookmark = {
                         type: 'bookmark',
                         title: a.textContent.trim(),
@@ -820,7 +801,6 @@
                         description: a.getAttribute('description') || a.getAttribute('DESCRIPTION')
                     };
                     
-                    // 清理URL
                     if (bookmark.url) {
                         bookmark.url = bookmark.url.trim();
                     }
@@ -861,8 +841,13 @@
                 const status = document.getElementById('status');
                 status.textContent = message;
                 status.className = `status ${type}`;
+                status.style.display = 'block';
                 
-                setTimeout(() => {
+                if (this.statusTimer) {
+                    clearTimeout(this.statusTimer);
+                }
+                
+                this.statusTimer = setTimeout(() => {
                     status.style.display = 'none';
                 }, 5000);
             }
@@ -897,18 +882,16 @@
                         version: '1.0.0',
                         total_bookmarks: 0,
                         total_folders: 0,
-                        source_file: 'bookmarks.html'
+                        source_file: this.sourceFileName || 'bookmarks.html'
                     };
                 }
                 
                 if (preserveStructure) {
                     result.bookmarks = this.filterJsonData(this.bookmarks, includeIcons);
                 } else {
-                    // 扁平化结构
                     result.bookmarks = this.flattenBookmarks(this.bookmarks, includeIcons);
                 }
                 
-                // 更新统计
                 if (includeMetadata) {
                     const stats = this.calculateStats(this.bookmarks);
                     result.metadata.total_bookmarks = stats.bookmarks;
@@ -1012,14 +995,17 @@
             displayJson(json) {
                 const preview = document.getElementById('preview');
                 preview.textContent = JSON.stringify(json, null, 2);
-                
-                // 添加语法高亮
                 this.highlightJson(preview);
             }
             
             highlightJson(element) {
                 const text = element.textContent;
-                let highlighted = text
+                const escaped = text
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;');
+                
+                let highlighted = escaped
                     .replace(/"([^"]+)":/g, '<span class="json-key">"$1"</span>:')
                     .replace(/: "([^"]+)"/g, ': <span class="json-string">"$1"</span>')
                     .replace(/: (\d+)/g, ': <span class="json-number">$1</span>')
@@ -1045,14 +1031,13 @@
                 resultContainer.style.display = 'none';
                 placeholder.style.display = 'none';
                 
-                // 添加树视图交互
                 this.addTreeViewEvents(previewTree);
             }
             
             generateTreeView(bookmarks) {
-                let html = '<div class="tree-view">';
+                let html = '';
                 
-                const processItems = (items, isRoot = true) => {
+                const processItems = (items) => {
                     html += '<div class="children">';
                     items.forEach(item => {
                         if (item.type === 'folder') {
@@ -1063,13 +1048,15 @@
                                 <small style="color: #999; margin-left: 10px;">(${item.children ? item.children.filter(c => c.type === 'bookmark').length : 0} 个书签)</small>
                             </div>`;
                             if (hasChildren) {
-                                processItems(item.children, false);
+                                processItems(item.children);
                             }
                         } else {
                             html += `<div class="bookmark">
                                 <span>🔖 ${this.escapeHtml(item.title)}</span>
                                 <small style="color: #999; margin-left: 10px;">
-                                    <a href="${item.url}" target="_blank" style="color: #667eea;">${item.url}</a>
+                                    <a href="${this.escapeHtml(item.url || '')}" target="_blank" style="color: #667eea;">
+                                        ${this.escapeHtml(item.url || '')}
+                                    </a>
                                 </small>
                             </div>`;
                         }
@@ -1078,7 +1065,6 @@
                 };
                 
                 processItems(bookmarks);
-                html += '</div>';
                 return html;
             }
             
@@ -1134,7 +1120,6 @@
                     await navigator.clipboard.writeText(jsonStr);
                     this.showStatus('JSON已复制到剪贴板！', 'success');
                 } catch (err) {
-                    // 降级方案
                     const textArea = document.createElement('textarea');
                     textArea.value = jsonStr;
                     document.body.appendChild(textArea);
@@ -1162,6 +1147,7 @@
                 this.bookmarks = null;
                 this.jsonResult = null;
                 this.originalHtml = null;
+                this.sourceFileName = null;
                 
                 document.getElementById('fileInput').value = '';
                 document.getElementById('preview').textContent = '';
@@ -1217,10 +1203,8 @@
             }
         }
         
-        // 初始化应用
         const app = new BookmarkConverter();
         
-        // 全局函数供HTML调用
         window.showHelp = () => app.showHelp();
         window.showAbout = () => app.showAbout();
     </script>
