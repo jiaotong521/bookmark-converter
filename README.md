@@ -25,7 +25,7 @@
 ## 🚀 使用方法
 
 ### 在线使用
-1. 访问你的GitHub Pages链接：`https://你的用户名.github.io/bookmark-converter/`
+1. 访问GitHub Pages链接：`https://jiaotong521.github.io/bookmark-converter/#`
 2. 上传从浏览器导出的HTML书签文件
 3. 点击"转换为JSON"
 4. 下载或复制生成的JSON文件
@@ -35,6 +35,25 @@
 2. 用浏览器直接打开该文件
 3. 按照上述步骤操作
 
+---
+
+🚀 快速部署你自己的版本
+想拥有专属的书签转换工具？只需2分钟，Fork本仓库即可！
+步骤1：Fork本仓库
+点击右上角的 "Fork" 按钮，选择你的账号，创建副本。
+步骤2：启用GitHub Pages
+进入你Fork后的仓库
+点击 Settings → Pages
+在"Source"部分：
+Branch: 选择 main
+Folder: 选择 /(root)
+点击 Save
+步骤3：等待部署
+GitHub会自动部署，通常1-2分钟完成
+部署成功后，访问：https://你的用户名.github.io/仓库名/
+步骤4：开始使用
+将链接收藏或设为浏览器书签
+随时随地转换你的书签文件！
 ---
 
 ## 📥 如何导出浏览器书签
