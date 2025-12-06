@@ -256,6 +256,7 @@
             border-radius: 10px;
             margin-top: 20px;
             border: 1px solid #30363d;
+            display: none;
         }
         
         .stats h3 {
@@ -312,6 +313,7 @@
             cursor: pointer;
             color: #8b949e;
             transition: transform 0.2s ease;
+            margin-right: 5px;
         }
         
         .tree-view .arrow:hover {
@@ -321,14 +323,11 @@
         .tree-view .arrow.collapsed::before {
             content: '▶';
             display: inline-block;
-            transform: rotate(0deg);
-            transition: transform 0.2s ease;
         }
         
         .tree-view .arrow.expanded::before {
             content: '▼';
             display: inline-block;
-            transform: rotate(0deg);
         }
         
         .tree-view .children {
@@ -393,6 +392,21 @@
             fill: currentColor;
         }
         
+        /* 新增样式：预览工具栏 */
+        .preview-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #30363d;
+        }
+        
+        .preview-toolbar h3 {
+            margin: 0;
+            color: #58a6ff;
+        }
+        
         /* Syntax highlighting for JSON */
         .json-string {
             color: #a5d6ff;
@@ -439,7 +453,7 @@
                     <p>正在解析书签文件...</p>
                 </div>
                 
-                <div class="stats" id="stats" style="display: none;">
+                <div class="stats" id="stats">
                     <h3>📊 统计信息</h3>
                     <div class="stat-item">
                         <span>总书签数：</span>
@@ -522,10 +536,20 @@
                             <input type="checkbox" id="includeIcons" checked> 包含网站图标数据
                         </label>
                     </div>
+                    
+                    <div id="preview" style="margin-top: 20px;"></div>
                 </div>
                 
                 <div id="previewContainer" style="display: none;">
-                    <h3>🔍 书签结构预览</h3>
+                    <div class="preview-toolbar">
+                        <h3>🔍 书签结构预览</h3>
+                        <button class="btn-secondary" id="backToResultBtn">
+                            <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+                            </svg>
+                            返回结果
+                        </button>
+                    </div>
                     <div class="tree-view" id="previewTree"></div>
                 </div>
                 
@@ -577,6 +601,13 @@
                 downloadBtn.addEventListener('click', this.downloadJson.bind(this));
                 copyBtn.addEventListener('click', this.copyJson.bind(this));
                 formatBtn.addEventListener('click', this.formatJson.bind(this));
+                
+                // 新增：返回按钮事件
+                document.getElementById('backToResultBtn').addEventListener('click', () => {
+                    document.getElementById('previewContainer').style.display = 'none';
+                    document.getElementById('resultContainer').style.display = 'block';
+                    document.getElementById('placeholder').style.display = 'none';
+                });
                 
                 // 复选框事件
                 document.getElementById('includeMetadata').addEventListener('change', this.updateJson.bind(this));
@@ -1007,10 +1038,12 @@
                 const previewContainer = document.getElementById('previewContainer');
                 const previewTree = document.getElementById('previewTree');
                 const resultContainer = document.getElementById('resultContainer');
+                const placeholder = document.getElementById('placeholder');
                 
                 previewTree.innerHTML = this.generateTreeView(this.bookmarks);
                 previewContainer.style.display = 'block';
                 resultContainer.style.display = 'none';
+                placeholder.style.display = 'none';
                 
                 // 添加树视图交互
                 this.addTreeViewEvents(previewTree);
@@ -1180,10 +1213,7 @@
 - 纯前端JavaScript处理
 - 无需服务器上传
 - 支持大文件处理
-- 响应式设计
-
-开发者：AI助手
-更新时间：2024年12月`);
+- 响应式设计`);
             }
         }
         
