@@ -14,7 +14,7 @@
 ## 🚀 使用方法
 
 ### 在线使用
-1. 访问GitHub Pages链接：[https://你的用户名.github.io/bookmark-converter/](https://你的用户名.github.io/bookmark-converter/)
+1. 访问GitHub Pages链接：[https://jiaotong521.github.io/bookmark-converter)
 2. 上传从浏览器导出的HTML书签文件
 3. 点击“转换为JSON”
 4. 下载或复制生成的JSON文件
