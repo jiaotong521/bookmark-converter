@@ -1,6 +1,4 @@
 
-
-```markdown
 # 🔖 书签HTML转JSON转换器
 
 一个纯前端实现的浏览器书签转换工具，可将Chrome、Firefox、Edge等浏览器导出的HTML书签文件无损转换为JSON格式。
